@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import settings
 from app.database.database import Base, engine
-from app.api.v1 import health, users
+from app.api.v1 import health, users, screening, reservation
 
 # Create database tables
 Base.metadata.create_all(bind=engine)
@@ -32,7 +32,8 @@ app.add_middleware(
 # Include routers
 app.include_router(health.router)
 app.include_router(users.router, prefix="/api/v1")
-
+app.include_router(screening.router, prefix="/api/v1")
+app.include_router(reservation.router, prefix="/api/v1")
 
 @app.get("/")
 async def root():

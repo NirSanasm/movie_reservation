@@ -26,4 +26,4 @@ settings = Settings()
 
 
 print("from config")
-print(settings.DATABASE_URL)
+
