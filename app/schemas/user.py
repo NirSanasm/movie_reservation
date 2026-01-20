@@ -81,6 +81,20 @@ class ScreeningResponse(ScreeningAdd):
         from_attributes = True
 
 
+from typing import List
+
+
+class SeatAvailabilityResponse(BaseModel):
+    """Seat availability response schema."""
+    
+    screening_id: int
+    total_seats: int
+    available_count: int
+    taken_count: int
+    taken_seats: List[str]
+    available_seats: List[str]
+
+
 # Payment Schemas (Fake Payment Simulation)
 class PaymentRequest(BaseModel):
     """Fake payment request schema."""

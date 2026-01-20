@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.responses import Response
 from app.schemas.user import (
     ReservationCreate, 
     ReservationResponse, 
@@ -8,12 +9,14 @@ from app.schemas.user import (
 from app.database.database import get_db
 from sqlalchemy.orm import Session
 from app.core.security import get_current_user
-from app.models.user import User, Screening, Reservation
+from app.models.user import User, Screening, Reservation, Movie
 from typing import List
 from datetime import datetime
 from decimal import Decimal
 import uuid
 import re
+import io
+from fpdf import FPDF
 
 router = APIRouter(prefix="/reservation", tags=["reservation"])
 
@@ -91,6 +94,26 @@ async def create_reservation(
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail=f"Seat {reservation_data.seat_number} is already reserved"
+        )
+    
+    # Check seat capacity - count active reservations
+    active_reservation_count = db.query(Reservation).filter(
+        Reservation.screening_id == reservation_data.screening_id,
+        Reservation.status == "active"
+    ).count()
+    
+    if active_reservation_count >= screening.total_seats:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="This screening is fully booked"
+        )
+    
+    # Validate seat number format (e.g., A1, B10, etc.)
+    seat_pattern = re.compile(r'^[A-Z]\d{1,2}$')
+    if not seat_pattern.match(reservation_data.seat_number.upper()):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid seat number format. Use format like A1, B5, C10"
         )
     
     # Process fake payment
@@ -200,3 +223,128 @@ async def cancel_reservation(
     db.refresh(reservation)
     
     return reservation
+
+
+def generate_ticket_pdf(reservation, screening, movie, user_email: str) -> bytes:
+    """Generate a PDF ticket for a reservation."""
+    pdf = FPDF()
+    pdf.add_page()
+    
+    # Header
+    pdf.set_font("Helvetica", "B", 24)
+    pdf.set_text_color(0, 102, 204)
+    pdf.cell(0, 20, "MOVIE TICKET", align="C", ln=True)
+    
+    # Divider line
+    pdf.set_draw_color(0, 102, 204)
+    pdf.set_line_width(1)
+    pdf.line(20, 35, 190, 35)
+    
+    pdf.ln(10)
+    
+    # Ticket details
+    pdf.set_font("Helvetica", "B", 14)
+    pdf.set_text_color(0, 0, 0)
+    pdf.cell(0, 10, f"Movie: {movie.title}", ln=True)
+    
+    pdf.set_font("Helvetica", "", 12)
+    pdf.cell(0, 8, f"Genre: {movie.genre}", ln=True)
+    
+    pdf.ln(5)
+    pdf.set_font("Helvetica", "B", 12)
+    pdf.cell(0, 8, "Screening Details:", ln=True)
+    
+    pdf.set_font("Helvetica", "", 12)
+    show_date = screening.show_datetime.strftime("%B %d, %Y")
+    show_time = screening.show_datetime.strftime("%I:%M %p")
+    pdf.cell(0, 8, f"Date: {show_date}", ln=True)
+    pdf.cell(0, 8, f"Time: {show_time}", ln=True)
+    
+    pdf.ln(5)
+    pdf.set_font("Helvetica", "B", 16)
+    pdf.set_text_color(0, 128, 0)
+    pdf.cell(0, 10, f"SEAT: {reservation.seat_number}", ln=True)
+    
+    pdf.set_text_color(0, 0, 0)
+    pdf.set_font("Helvetica", "", 12)
+    pdf.cell(0, 8, f"Price: ${screening.price}", ln=True)
+    
+    pdf.ln(10)
+    
+    # Booking details box
+    pdf.set_fill_color(240, 240, 240)
+    pdf.rect(20, pdf.get_y(), 170, 35, "F")
+    
+    pdf.set_font("Helvetica", "B", 10)
+    pdf.set_xy(25, pdf.get_y() + 5)
+    pdf.cell(0, 6, "BOOKING INFORMATION", ln=True)
+    
+    pdf.set_font("Helvetica", "", 10)
+    pdf.set_x(25)
+    pdf.cell(0, 6, f"Booking ID: RES-{reservation.id:06d}", ln=True)
+    pdf.set_x(25)
+    pdf.cell(0, 6, f"Email: {user_email}", ln=True)
+    pdf.set_x(25)
+    booked_date = reservation.created_at.strftime("%Y-%m-%d %H:%M") if reservation.created_at else "N/A"
+    pdf.cell(0, 6, f"Booked on: {booked_date}", ln=True)
+    
+    pdf.ln(20)
+    
+    # Footer
+    pdf.set_font("Helvetica", "I", 10)
+    pdf.set_text_color(128, 128, 128)
+    pdf.cell(0, 6, "Please present this ticket at the entrance.", align="C", ln=True)
+    pdf.cell(0, 6, "Thank you for choosing our cinema!", align="C", ln=True)
+    
+    # For fpdf 1.7.x: output(dest='S') returns a string, encode to bytes
+    pdf_string = pdf.output(dest='S')
+    return pdf_string.encode('latin-1')
+
+
+@router.get("/{reservation_id}/ticket")
+async def download_ticket(
+    reservation_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Download a PDF ticket for a reservation.
+    Users can only download tickets for their own active reservations.
+    """
+    reservation = db.query(Reservation).filter(
+        Reservation.id == reservation_id,
+        Reservation.user_id == current_user.id
+    ).first()
+    
+    if not reservation:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Reservation not found"
+        )
+    
+    if reservation.status == "cancelled":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cannot download ticket for cancelled reservation"
+        )
+    
+    # Get screening and movie details
+    screening = db.query(Screening).filter(
+        Screening.id == reservation.screening_id
+    ).first()
+    
+    movie = db.query(Movie).filter(
+        Movie.id == screening.movie_id
+    ).first()
+    
+    # Generate PDF
+    pdf_bytes = generate_ticket_pdf(reservation, screening, movie, current_user.email)
+    
+    # Return PDF as downloadable file
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": f"attachment; filename=ticket_RES-{reservation.id:06d}.pdf"
+        }
+    )
