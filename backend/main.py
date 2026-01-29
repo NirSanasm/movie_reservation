@@ -23,7 +23,10 @@ logger = logging.getLogger(__name__)
 # Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        "https://movie-reservation-f2pv.vercel.app",
+        "http://localhost:3000",  # Keep for local development
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
