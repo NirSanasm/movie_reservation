@@ -1,24 +1,59 @@
 import logging
+import asyncio
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import settings
 from app.database.database import Base, engine
 from app.api.v1 import health, users, screening, reservation
+from app.core.seed import seed_initial_data, weekly_screening_task
 
 # Create database tables
 Base.metadata.create_all(bind=engine)
 
-# Initialize FastAPI app
-app = FastAPI(
-    title=settings.APP_NAME,
-    version=settings.APP_VERSION,
-    debug=settings.DEBUG
-)
-
 # Setup logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+# Background task reference
+background_task = None
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Manage application lifespan events."""
+    global background_task
+    
+    # Startup
+    logger.info(f"Starting {settings.APP_NAME} v{settings.APP_VERSION}")
+    
+    # Seed initial data (movies and screenings)
+    seed_initial_data()
+    
+    # Start background task for weekly screening creation
+    background_task = asyncio.create_task(weekly_screening_task())
+    logger.info("Started weekly screening background task")
+    
+    yield
+    
+    # Shutdown
+    logger.info(f"Shutting down {settings.APP_NAME}")
+    if background_task:
+        background_task.cancel()
+        try:
+            await background_task
+        except asyncio.CancelledError:
+            pass
+
+
+# Initialize FastAPI app with lifespan
+app = FastAPI(
+    title=settings.APP_NAME,
+    version=settings.APP_VERSION,
+    debug=settings.DEBUG,
+    lifespan=lifespan
+)
 
 # Add CORS middleware
 app.add_middleware(
@@ -46,18 +81,6 @@ async def root():
         "app": settings.APP_NAME,
         "version": settings.APP_VERSION
     }
-
-
-@app.on_event("startup")
-async def startup_event():
-    """Application startup event."""
-    logger.info(f"Starting {settings.APP_NAME} v{settings.APP_VERSION}")
-
-
-@app.on_event("shutdown")
-async def shutdown_event():
-    """Application shutdown event."""
-    logger.info(f"Shutting down {settings.APP_NAME}")
 
 
 if __name__ == "__main__":

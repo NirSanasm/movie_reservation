@@ -233,7 +233,7 @@ def generate_ticket_pdf(reservation, screening, movie, user_email: str) -> bytes
     # Header
     pdf.set_font("Helvetica", "B", 24)
     pdf.set_text_color(0, 102, 204)
-    pdf.cell(0, 20, "MOVIE TICKET", align="C", new_x="LMARGIN", new_y="NEXT")
+    pdf.cell(0, 20, "MOVIE TICKET", align="C", ln=True)
     
     # Divider line
     pdf.set_draw_color(0, 102, 204)
@@ -246,30 +246,30 @@ def generate_ticket_pdf(reservation, screening, movie, user_email: str) -> bytes
     pdf.set_font("Helvetica", "B", 14)
     pdf.set_text_color(0, 0, 0)
     movie_title = movie.title if movie else "Unknown Movie"
-    pdf.cell(0, 10, f"Movie: {movie_title}", new_x="LMARGIN", new_y="NEXT")
+    pdf.cell(0, 10, "Movie: " + movie_title, ln=True)
     
     pdf.set_font("Helvetica", "", 12)
     movie_genre = movie.genre if movie else "N/A"
-    pdf.cell(0, 8, f"Genre: {movie_genre}", new_x="LMARGIN", new_y="NEXT")
+    pdf.cell(0, 8, "Genre: " + movie_genre, ln=True)
     
     pdf.ln(5)
     pdf.set_font("Helvetica", "B", 12)
-    pdf.cell(0, 8, "Screening Details:", new_x="LMARGIN", new_y="NEXT")
+    pdf.cell(0, 8, "Screening Details:", ln=True)
     
     pdf.set_font("Helvetica", "", 12)
     show_date = screening.show_datetime.strftime("%B %d, %Y")
     show_time = screening.show_datetime.strftime("%I:%M %p")
-    pdf.cell(0, 8, f"Date: {show_date}", new_x="LMARGIN", new_y="NEXT")
-    pdf.cell(0, 8, f"Time: {show_time}", new_x="LMARGIN", new_y="NEXT")
+    pdf.cell(0, 8, "Date: " + show_date, ln=True)
+    pdf.cell(0, 8, "Time: " + show_time, ln=True)
     
     pdf.ln(5)
     pdf.set_font("Helvetica", "B", 16)
     pdf.set_text_color(0, 128, 0)
-    pdf.cell(0, 10, f"SEAT: {reservation.seat_number}", new_x="LMARGIN", new_y="NEXT")
+    pdf.cell(0, 10, "SEAT: " + reservation.seat_number, ln=True)
     
     pdf.set_text_color(0, 0, 0)
     pdf.set_font("Helvetica", "", 12)
-    pdf.cell(0, 8, f"Price: ${screening.price}", new_x="LMARGIN", new_y="NEXT")
+    pdf.cell(0, 8, "Price: $" + str(screening.price), ln=True)
     
     pdf.ln(10)
     
@@ -279,27 +279,30 @@ def generate_ticket_pdf(reservation, screening, movie, user_email: str) -> bytes
     
     pdf.set_font("Helvetica", "B", 10)
     pdf.set_xy(25, pdf.get_y() + 5)
-    pdf.cell(0, 6, "BOOKING INFORMATION", new_x="LMARGIN", new_y="NEXT")
+    pdf.cell(0, 6, "BOOKING INFORMATION", ln=True)
     
     pdf.set_font("Helvetica", "", 10)
     pdf.set_x(25)
-    pdf.cell(0, 6, f"Booking ID: RES-{reservation.id:06d}", new_x="LMARGIN", new_y="NEXT")
+    pdf.cell(0, 6, "Booking ID: RES-" + str(reservation.id).zfill(6), ln=True)
     pdf.set_x(25)
-    pdf.cell(0, 6, f"Email: {user_email}", new_x="LMARGIN", new_y="NEXT")
+    pdf.cell(0, 6, "Email: " + user_email, ln=True)
     pdf.set_x(25)
     booked_date = reservation.created_at.strftime("%Y-%m-%d %H:%M") if reservation.created_at else "N/A"
-    pdf.cell(0, 6, f"Booked on: {booked_date}", new_x="LMARGIN", new_y="NEXT")
+    pdf.cell(0, 6, "Booked on: " + booked_date, ln=True)
     
     pdf.ln(20)
     
     # Footer
     pdf.set_font("Helvetica", "I", 10)
     pdf.set_text_color(128, 128, 128)
-    pdf.cell(0, 6, "Please present this ticket at the entrance.", align="C", new_x="LMARGIN", new_y="NEXT")
-    pdf.cell(0, 6, "Thank you for choosing our cinema!", align="C", new_x="LMARGIN", new_y="NEXT")
+    pdf.cell(0, 6, "Please present this ticket at the entrance.", align="C", ln=True)
+    pdf.cell(0, 6, "Thank you for choosing our cinema!", align="C", ln=True)
     
-    # fpdf2 returns bytes directly
-    return bytes(pdf.output())
+    # fpdf 1.7.x: output(dest='S') returns a string, encode to bytes
+    pdf_content = pdf.output(dest='S')
+    if isinstance(pdf_content, str):
+        return pdf_content.encode('latin-1')
+    return pdf_content
 
 
 @router.get("/{reservation_id}/ticket")
