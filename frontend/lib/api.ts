@@ -128,14 +128,14 @@ export const reservationsApi = {
         }),
 
     getMyReservations: () =>
-        fetchApi<Reservation[]>('/api/v1/reservation/my'),
+        fetchApi<Reservation[]>('/api/v1/reservation/'),
 
     getById: (id: number) =>
         fetchApi<Reservation>(`/api/v1/reservation/${id}`),
 
     cancel: (id: number) =>
-        fetchApi<void>(`/api/v1/reservation/${id}`, {
-            method: 'DELETE',
+        fetchApi<Reservation>(`/api/v1/reservation/${id}/cancel`, {
+            method: 'POST',
         }),
 
     downloadTicket: async (id: number) => {
@@ -147,17 +147,32 @@ export const reservationsApi = {
         });
 
         if (!response.ok) {
+            const errorText = await response.text();
+            console.error('Download failed:', errorText);
             throw new Error('Failed to download ticket');
         }
 
+        // Check content type
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/pdf')) {
+            const text = await response.text();
+            console.error('Unexpected response:', text);
+            throw new Error('Invalid ticket format received');
+        }
+
         const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
+        const url = window.URL.createObjectURL(new Blob([blob], { type: 'application/pdf' }));
         const a = document.createElement('a');
         a.href = url;
         a.download = `ticket-${id}.pdf`;
+        a.style.display = 'none';
         document.body.appendChild(a);
         a.click();
-        window.URL.revokeObjectURL(url);
-        document.body.removeChild(a);
+
+        // Cleanup after a short delay
+        setTimeout(() => {
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+        }, 100);
     },
 };

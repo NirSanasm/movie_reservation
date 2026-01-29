@@ -11,7 +11,6 @@ export default function RegisterPage() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
-    const [role, setRole] = useState<'user' | 'admin'>('user');
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
 
@@ -32,8 +31,8 @@ export default function RegisterPage() {
         setLoading(true);
 
         try {
-            // Register the user
-            await authApi.register({ email, password, role });
+            // Register the user (always as 'user' role - admins are created via seed data only)
+            await authApi.register({ email, password, role: 'user' });
 
             // Auto-login after registration
             const loginResponse = await authApi.login(email, password);
@@ -110,7 +109,7 @@ export default function RegisterPage() {
                         />
                     </div>
 
-                    <div style={{ marginBottom: '20px' }}>
+                    <div style={{ marginBottom: '28px' }}>
                         <label htmlFor="confirmPassword" className="form-label">Confirm Password</label>
                         <input
                             id="confirmPassword"
@@ -121,47 +120,6 @@ export default function RegisterPage() {
                             placeholder="••••••••"
                             required
                         />
-                    </div>
-
-                    <div style={{ marginBottom: '28px' }}>
-                        <label className="form-label">Account Type</label>
-                        <div style={{ display: 'flex', gap: '12px' }}>
-                            <button
-                                type="button"
-                                onClick={() => setRole('user')}
-                                style={{
-                                    flex: 1,
-                                    padding: '12px',
-                                    borderRadius: '10px',
-                                    border: role === 'user' ? '2px solid #7c3aed' : '1px solid rgba(100, 100, 200, 0.2)',
-                                    background: role === 'user' ? 'rgba(124, 58, 237, 0.2)' : 'transparent',
-                                    color: role === 'user' ? 'white' : 'rgba(229, 229, 229, 0.6)',
-                                    cursor: 'pointer',
-                                    transition: 'all 0.2s ease',
-                                }}
-                            >
-                                👤 User
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => setRole('admin')}
-                                style={{
-                                    flex: 1,
-                                    padding: '12px',
-                                    borderRadius: '10px',
-                                    border: role === 'admin' ? '2px solid #7c3aed' : '1px solid rgba(100, 100, 200, 0.2)',
-                                    background: role === 'admin' ? 'rgba(124, 58, 237, 0.2)' : 'transparent',
-                                    color: role === 'admin' ? 'white' : 'rgba(229, 229, 229, 0.6)',
-                                    cursor: 'pointer',
-                                    transition: 'all 0.2s ease',
-                                }}
-                            >
-                                🛡️ Admin
-                            </button>
-                        </div>
-                        <p style={{ fontSize: '12px', color: 'rgba(229, 229, 229, 0.4)', marginTop: '8px' }}>
-                            Admins can manage screenings and movies
-                        </p>
                     </div>
 
                     <button
