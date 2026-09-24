@@ -74,7 +74,7 @@ export const authApi = {
         formData.append('username', email);
         formData.append('password', password);
 
-        const response = await fetch(`${API_BASE_URL}/api/v1/users/login`, {
+        const response = await fetch(`${API_BASE_URL}/api/v1/users/token`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',

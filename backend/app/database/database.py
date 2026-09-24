@@ -22,6 +22,10 @@ SessionLocal = sessionmaker(
 Base = declarative_base()
 
 
+async def get_async_database():
+    
+
+
 def get_db():
     """Get database session."""
     db = SessionLocal()
