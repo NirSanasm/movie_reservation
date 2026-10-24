@@ -48,6 +48,10 @@ def get_test_target():
         db.close()
 
 
+from app.core.security import create_access_token
+TEST_TOKEN = create_access_token({"sub": "user@example.com"})
+
+
 async def attempt_booking(client: httpx.AsyncClient, user_id: int, screening_id: int, seat_number: str):
     payload = {
         "screening_id": screening_id,
@@ -59,8 +63,9 @@ async def attempt_booking(client: httpx.AsyncClient, user_id: int, screening_id:
             "expiry_year": 2027,
         },
     }
+    headers = {"Authorization": f"Bearer {TEST_TOKEN}"}
     try:
-        resp = await client.post(URL, json=payload)
+        resp = await client.post(URL, json=payload, headers=headers)
         return {
             "user_id": user_id,
             "status": resp.status_code,

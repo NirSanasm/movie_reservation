@@ -135,7 +135,7 @@ export default function ReservationsPage() {
                                         </div>
 
                                         <h3 style={{ fontSize: '1.25rem', fontWeight: 600, marginBottom: '8px' }}>
-                                            🎬 Movie #{reservation.screening_id} - Screening
+                                            🎬 {screening?.movie?.title || `Movie #${screening?.movie_id || reservation.screening_id}`}
                                         </h3>
 
                                         <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap', color: 'rgba(229, 229, 229, 0.7)', fontSize: '14px' }}>

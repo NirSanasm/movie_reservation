@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from app.schemas.user import ScreeningAdd, ScreeningResponse, SeatAvailabilityResponse
 from app.database.database import get_db
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from app.core.security import get_current_user, get_current_admin_user
 from app.models.user import User, Movie, Screening, Reservation
 from typing import List
@@ -10,7 +10,7 @@ router = APIRouter(prefix="/screening", tags=["screening"])
 
 
 @router.get("/", response_model=List[ScreeningResponse])
-async def get_all_screenings(
+def get_all_screenings(
     skip: int = 0,
     limit: int = 100,
     db: Session = Depends(get_db),
@@ -20,12 +20,19 @@ async def get_all_screenings(
     Get all screenings.
     Available to all authenticated users.
     """
-    screenings = db.query(Screening).order_by(Screening.show_datetime).offset(skip).limit(limit).all()
+    screenings = (
+        db.query(Screening)
+        .options(joinedload(Screening.movie))
+        .order_by(Screening.show_datetime)
+        .offset(skip)
+        .limit(limit)
+        .all()
+    )
     return screenings
 
 
 @router.get("/{screening_id}", response_model=ScreeningResponse)
-async def get_screening_by_id(
+def get_screening_by_id(
     screening_id: int,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
@@ -34,7 +41,12 @@ async def get_screening_by_id(
     Get a specific screening by ID.
     Available to all authenticated users.
     """
-    screening = db.query(Screening).filter(Screening.id == screening_id).first()
+    screening = (
+        db.query(Screening)
+        .options(joinedload(Screening.movie))
+        .filter(Screening.id == screening_id)
+        .first()
+    )
     if not screening:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

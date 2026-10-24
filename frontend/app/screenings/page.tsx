@@ -81,24 +81,56 @@ export default function ScreeningsPage() {
                                 style={{ textDecoration: 'none' }}
                             >
                                 <div className="glass-card" style={{ height: '100%', cursor: 'pointer' }}>
-                                    {/* Movie placeholder banner */}
+                                    {/* Movie poster image or fallback */}
                                     <div style={{
-                                        height: '140px',
-                                        background: 'linear-gradient(135deg, rgba(124, 58, 237, 0.3) 0%, rgba(59, 130, 246, 0.3) 100%)',
+                                        height: '200px',
                                         borderRadius: '12px',
                                         marginBottom: '16px',
+                                        overflow: 'hidden',
+                                        position: 'relative',
+                                        background: 'linear-gradient(135deg, rgba(124, 58, 237, 0.3) 0%, rgba(59, 130, 246, 0.3) 100%)',
                                         display: 'flex',
                                         alignItems: 'center',
                                         justifyContent: 'center',
-                                        fontSize: '3rem',
                                     }}>
-                                        🎬
+                                        {screening.movie?.poster_url ? (
+                                            <img
+                                                src={screening.movie.poster_url}
+                                                alt={screening.movie.title || `Movie #${screening.movie_id}`}
+                                                style={{
+                                                    width: '100%',
+                                                    height: '100%',
+                                                    objectFit: 'cover',
+                                                }}
+                                                onError={(e) => {
+                                                    (e.target as HTMLElement).style.display = 'none';
+                                                }}
+                                            />
+                                        ) : (
+                                            <span style={{ fontSize: '3rem' }}>🎬</span>
+                                        )}
+                                        {screening.movie?.genre && (
+                                            <span style={{
+                                                position: 'absolute',
+                                                top: '12px',
+                                                right: '12px',
+                                                background: 'rgba(0, 0, 0, 0.75)',
+                                                backdropFilter: 'blur(8px)',
+                                                padding: '4px 10px',
+                                                borderRadius: '12px',
+                                                fontSize: '12px',
+                                                fontWeight: 600,
+                                                color: '#fff',
+                                            }}>
+                                                {screening.movie.genre}
+                                            </span>
+                                        )}
                                     </div>
 
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
                                         <div>
                                             <h3 style={{ fontSize: '1.25rem', fontWeight: 600, marginBottom: '4px', color: 'white' }}>
-                                                Movie #{screening.movie_id}
+                                                {screening.movie?.title || `Movie #${screening.movie_id}`}
                                             </h3>
                                             <p style={{ color: 'rgba(229, 229, 229, 0.6)', fontSize: '14px' }}>
                                                 Screening #{screening.id}

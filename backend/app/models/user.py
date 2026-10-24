@@ -5,6 +5,7 @@ from app.database.database import Base
 
 
 from sqlalchemy import ForeignKey, Numeric, CheckConstraint
+from sqlalchemy.orm import relationship
 
 
 class User(Base):
@@ -54,6 +55,8 @@ class Screening(Base):
     price = Column(Numeric(10, 2), nullable=False, default=10.00)
     created_at = Column(DateTime(timezone=True), default=datetime.utcnow)
 
+    movie = relationship("Movie")
+
     __table_args__ = (
         CheckConstraint("total_seats > 0", name="valid_seats"),
     )
@@ -77,7 +80,6 @@ class Reservation(Base):
 
     __table_args__ = (
         CheckConstraint("status IN ('active', 'cancelled')", name="valid_status"),
-        UniqueConstraint("screening_id", "seat_number", "status", name="unique_active_seat"),
     )
 
 
@@ -88,3 +90,10 @@ Index("idx_screenings_datetime", Screening.show_datetime)
 Index("idx_reservations_user", Reservation.user_id)
 Index("idx_reservations_screening", Reservation.screening_id)
 Index("idx_reservations_status", Reservation.screening_id, Reservation.status)
+Index(
+    "unique_active_seat",
+    Reservation.screening_id,
+    Reservation.seat_number,
+    unique=True,
+    postgresql_where=(Reservation.status == "active"),
+)

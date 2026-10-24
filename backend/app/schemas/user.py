@@ -89,6 +89,7 @@ class ScreeningResponse(ScreeningAdd):
     
     id: int
     created_at: Optional[datetime] = None
+    movie: Optional[MoviesResponse] = None
     
     class Config:
         from_attributes = True

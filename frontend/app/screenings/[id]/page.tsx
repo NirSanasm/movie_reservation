@@ -132,30 +132,85 @@ export default function ScreeningDetailPage({ params }: { params: Promise<{ id: 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '32px' }}>
                 {/* Screening Info */}
                 <div className="glass-card">
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px' }}>
-                        <div>
-                            <h1 style={{ fontSize: '2rem', fontWeight: 700, marginBottom: '8px' }}>
-                                🎬 Movie #{screening.movie_id}
-                            </h1>
-                            <p style={{ color: 'rgba(229, 229, 229, 0.6)' }}>Screening #{screening.id}</p>
-                        </div>
+                    <div style={{ display: 'flex', gap: '28px', flexWrap: 'wrap', alignItems: 'flex-start' }}>
+                        {/* Movie Poster */}
                         <div style={{
-                            background: 'linear-gradient(135deg, #7c3aed 0%, #3b82f6 100%)',
-                            padding: '12px 24px',
+                            width: '180px',
+                            height: '260px',
                             borderRadius: '12px',
-                            textAlign: 'center',
+                            overflow: 'hidden',
+                            flexShrink: 0,
+                            position: 'relative',
+                            background: 'linear-gradient(135deg, rgba(124, 58, 237, 0.3) 0%, rgba(59, 130, 246, 0.3) 100%)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
                         }}>
-                            <div style={{ fontSize: '1.5rem', fontWeight: 700 }}>${screening.price}</div>
-                            <div style={{ fontSize: '12px', opacity: 0.8 }}>per seat</div>
+                            {screening.movie?.poster_url ? (
+                                <img
+                                    src={screening.movie.poster_url}
+                                    alt={screening.movie.title || `Movie #${screening.movie_id}`}
+                                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                    onError={(e) => {
+                                        (e.target as HTMLElement).style.display = 'none';
+                                    }}
+                                />
+                            ) : (
+                                <span style={{ fontSize: '3.5rem' }}>🎬</span>
+                            )}
                         </div>
-                    </div>
 
-                    <div style={{ display: 'flex', gap: '24px', marginTop: '20px', flexWrap: 'wrap' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'rgba(229, 229, 229, 0.8)' }}>
-                            📅 {date}
-                        </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'rgba(229, 229, 229, 0.8)' }}>
-                            🕐 {time}
+                        {/* Movie & Screening Info */}
+                        <div style={{ flex: 1, minWidth: '280px' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px' }}>
+                                <div>
+                                    <h1 style={{ fontSize: '2.2rem', fontWeight: 800, marginBottom: '8px', lineHeight: 1.2 }}>
+                                        {screening.movie?.title || `🎬 Movie #${screening.movie_id}`}
+                                    </h1>
+                                    {screening.movie?.genre && (
+                                        <span style={{
+                                            display: 'inline-block',
+                                            background: 'rgba(124, 58, 237, 0.25)',
+                                            color: '#c084fc',
+                                            border: '1px solid rgba(124, 58, 237, 0.4)',
+                                            padding: '4px 12px',
+                                            borderRadius: '20px',
+                                            fontSize: '13px',
+                                            fontWeight: 600,
+                                            marginBottom: '8px',
+                                        }}>
+                                            {screening.movie.genre}
+                                        </span>
+                                    )}
+                                    <p style={{ color: 'rgba(229, 229, 229, 0.6)', fontSize: '14px' }}>
+                                        Screening #{screening.id} • Total Seats: {screening.total_seats}
+                                    </p>
+                                </div>
+                                <div style={{
+                                    background: 'linear-gradient(135deg, #7c3aed 0%, #3b82f6 100%)',
+                                    padding: '12px 24px',
+                                    borderRadius: '12px',
+                                    textAlign: 'center',
+                                }}>
+                                    <div style={{ fontSize: '1.5rem', fontWeight: 700 }}>${screening.price}</div>
+                                    <div style={{ fontSize: '12px', opacity: 0.8 }}>per seat</div>
+                                </div>
+                            </div>
+
+                            {screening.movie?.description && (
+                                <p style={{ color: 'rgba(229, 229, 229, 0.8)', marginTop: '16px', lineHeight: 1.6, fontSize: '15px' }}>
+                                    {screening.movie.description}
+                                </p>
+                            )}
+
+                            <div style={{ display: 'flex', gap: '24px', marginTop: '24px', flexWrap: 'wrap' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'rgba(229, 229, 229, 0.9)', fontWeight: 500 }}>
+                                    📅 {date}
+                                </div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'rgba(229, 229, 229, 0.9)', fontWeight: 500 }}>
+                                    🕐 {time}
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>

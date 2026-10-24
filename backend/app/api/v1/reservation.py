@@ -59,7 +59,8 @@ def process_fake_payment(card_number: str, amount: Decimal) -> PaymentResponse:
 @router.post("/", response_model=ReservationResponse, status_code=status.HTTP_201_CREATED)
 def create_reservation(
     reservation_data: ReservationCreate,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
 ):
     """
     Create a new reservation with fake payment.
@@ -122,14 +123,10 @@ def create_reservation(
         screening.price
     )
    
-    # Get valid user for test/guest reservation if unauthenticated
-    test_user = db.query(User).first()
-    user_id = test_user.id if test_user else 2
-
     # Create reservation
     db_reservation = Reservation(
         screening_id=reservation_data.screening_id,
-        user_id=user_id,
+        user_id=current_user.id,
         seat_number=reservation_data.seat_number,
         status="active"
     )
