@@ -23,7 +23,7 @@ Base = declarative_base()
 
 
 async def get_async_database():
-    
+    pass
 
 
 def get_db():

@@ -8,6 +8,7 @@ from app.schemas.user import (
 )
 from app.database.database import get_db
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
 from app.core.security import get_current_user
 from app.models.user import User, Screening, Reservation, Movie
 from typing import List
@@ -56,7 +57,7 @@ def process_fake_payment(card_number: str, amount: Decimal) -> PaymentResponse:
 
 
 @router.post("/", response_model=ReservationResponse, status_code=status.HTTP_201_CREATED)
-async def create_reservation(
+def create_reservation(
     reservation_data: ReservationCreate,
     db: Session = Depends(get_db)
 ):
@@ -107,7 +108,7 @@ async def create_reservation(
             detail="This screening is fully booked"
         )
     
-    # Validate seat number format (e.g., A1, B10, etc.)
+    # Validate seat number format (e.g., A1, B5, etc.)
     seat_pattern = re.compile(r'^[A-Z]\d{1,2}$')
     if not seat_pattern.match(reservation_data.seat_number.upper()):
         raise HTTPException(
@@ -121,17 +122,34 @@ async def create_reservation(
         screening.price
     )
    
+    # Get valid user for test/guest reservation if unauthenticated
+    test_user = db.query(User).first()
+    user_id = test_user.id if test_user else 2
+
     # Create reservation
     db_reservation = Reservation(
         screening_id=reservation_data.screening_id,
-        user_id=1,
+        user_id=user_id,
         seat_number=reservation_data.seat_number,
         status="active"
     )
     
-    db.add(db_reservation)
-    db.commit()
-    db.refresh(db_reservation)
+    try:
+        db.add(db_reservation)
+        db.commit()
+        db.refresh(db_reservation)
+    except IntegrityError as e:
+        db.rollback()
+        err_str = str(e.orig).lower() if hasattr(e, 'orig') else str(e).lower()
+        if "unique" in err_str:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=f"Seat {reservation_data.seat_number} is already reserved"
+            )
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Database error: {e.orig if hasattr(e, 'orig') else e}"
+        )
     
     # Return response with payment info
     return ReservationResponse(
