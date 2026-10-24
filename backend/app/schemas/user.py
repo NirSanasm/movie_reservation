@@ -1,6 +1,9 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr,  field_validator
 from typing import Optional
-from datetime import datetime
+from datetime import datetime, timezone
+
+from decimal import Decimal
+
 
 
 class UserBase(BaseModel):
@@ -59,16 +62,26 @@ class MoviesResponse(MoviesAdd):
         from_attributes = True
 
 
-from decimal import Decimal
-
-
 class ScreeningAdd(BaseModel):
-    """Screening add schema."""
-    
+    """Schema for creating a screening."""
+
     movie_id: int
     show_datetime: datetime
     total_seats: int = 100
     price: Decimal = Decimal("10.00")
+
+    @field_validator("show_datetime")
+    @classmethod
+    def validate_show_datetime(cls, value: datetime) -> datetime:
+        # Reject datetimes that have no timezone information.
+        if value.tzinfo is None or value.utcoffset() is None:
+            raise ValueError(
+                "show_datetime must include a timezone offset, "
+                "e.g. 2026-10-25T18:00:00+05:30"
+            )
+
+        # Normalize the instant to UTC.
+        return value.astimezone(timezone.utc)
 
 
 class ScreeningResponse(ScreeningAdd):

@@ -20,7 +20,7 @@ async def get_all_screenings(
     Get all screenings.
     Available to all authenticated users.
     """
-    screenings = db.query(Screening).offset(skip).limit(limit).all()
+    screenings = db.query(Screening).order_by(Screening.show_datetime).offset(skip).limit(limit).all()
     return screenings
 
 
@@ -123,7 +123,7 @@ async def create_screening(
         )
     
     # Create DB model from schema
-    db_screening = Screening(**screening.dict())
+    db_screening = Screening(**screening.model_dump())
     db.add(db_screening)
     db.commit()
     db.refresh(db_screening)

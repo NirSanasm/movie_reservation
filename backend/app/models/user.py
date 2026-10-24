@@ -1,3 +1,4 @@
+from time import time
 from sqlalchemy import Column, Integer, String, DateTime
 from datetime import datetime
 from app.database.database import Base
@@ -48,10 +49,10 @@ class Screening(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     movie_id = Column(Integer, ForeignKey("movies.id", ondelete="CASCADE"), nullable=False)
-    show_datetime = Column(DateTime, nullable=False)
+    show_datetime = Column(DateTime(timezone=True), nullable=False)
     total_seats = Column(Integer, nullable=False, default=100)
     price = Column(Numeric(10, 2), nullable=False, default=10.00)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime(timezone=True), default=datetime.utcnow)
 
     __table_args__ = (
         CheckConstraint("total_seats > 0", name="valid_seats"),
@@ -71,8 +72,8 @@ class Reservation(Base):
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     seat_number = Column(String(10), nullable=False)
     status = Column(String(20), nullable=False, default="active")
-    created_at = Column(DateTime, default=datetime.utcnow)
-    cancelled_at = Column(DateTime, nullable=True)
+    created_at = Column(DateTime(timezone=True), default=datetime.utcnow)
+    cancelled_at = Column(DateTime(timezone=True), nullable=True)
 
     __table_args__ = (
         CheckConstraint("status IN ('active', 'cancelled')", name="valid_status"),
