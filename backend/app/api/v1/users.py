@@ -12,7 +12,7 @@ from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 
 router = APIRouter(prefix="/users", tags=["users"])
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="users/login")
+
 
 
 @router.post("/register", response_model=UserResponse)
@@ -44,7 +44,7 @@ async def register(user: UserCreate, db: Session = Depends(get_db)):
 
 
 
-@router.post("/login")
+@router.post("/token")
 async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     """Login user and return access token."""
         

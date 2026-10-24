@@ -58,8 +58,7 @@ def process_fake_payment(card_number: str, amount: Decimal) -> PaymentResponse:
 @router.post("/", response_model=ReservationResponse, status_code=status.HTTP_201_CREATED)
 async def create_reservation(
     reservation_data: ReservationCreate,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    db: Session = Depends(get_db)
 ):
     """
     Create a new reservation with fake payment.
@@ -121,11 +120,11 @@ async def create_reservation(
         reservation_data.payment.card_number,
         screening.price
     )
-    
+   
     # Create reservation
     db_reservation = Reservation(
         screening_id=reservation_data.screening_id,
-        user_id=current_user.id,
+        user_id=1,
         seat_number=reservation_data.seat_number,
         status="active"
     )
