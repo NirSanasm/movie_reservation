@@ -4,12 +4,22 @@ from sqlalchemy.orm import sessionmaker
 
 from app.core.config import settings
 
-print(settings.DATABASE_URL)
+
+if settings.TESTING:
+    if not settings.TEST_DATABASE_URL:
+        raise RuntimeError(
+            "TEST_DATABASE_URL is required when TESTING is enabled"
+        )
+
+    database_url = settings.TEST_DATABASE_URL
+
+else:
+    database_url = settings.DATABASE_URL
+
 
 engine = create_engine(
-    settings.DATABASE_URL,
-    echo=settings.DEBUG,
-    future=True
+    database_url,
+    pool_pre_ping=True,
 )
 
 SessionLocal = sessionmaker(

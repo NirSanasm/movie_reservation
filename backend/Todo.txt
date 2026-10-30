@@ -1,2 +1,16 @@
+##
 
-# enable async db and test again
+test script - done
+
+docker 
+
+ci and cd
+
+telemetry
+
+rabbit mq adding
+
+ruff and mypy.
+
+
+##

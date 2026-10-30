@@ -16,6 +16,9 @@ class Settings(BaseSettings):
     DEBUG: bool = False
     APP_NAME: str = "FastAPI App"
     APP_VERSION: str = "1.0.0"
+
+    TESTING: bool = False
+    TEST_DATABASE_URL: str | None = None
     
     class Config:
         env_file = ".env"
