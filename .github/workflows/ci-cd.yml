@@ -41,6 +41,7 @@ jobs:
 
     env:
       DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/moviehub_test
+      TEST_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/moviehub_test
 
     steps:
       - name: Checkout repository
