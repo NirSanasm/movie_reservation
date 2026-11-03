@@ -42,6 +42,7 @@ jobs:
     env:
       DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/moviehub_test
       TEST_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/moviehub_test
+      SECRET_KEY: "ci-only-secret-key-fhsdakfh8iweyfhi-do-not-use-in-production"
 
     steps:
       - name: Checkout repository
