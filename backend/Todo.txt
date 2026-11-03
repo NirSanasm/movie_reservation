@@ -2,7 +2,7 @@
 
 test script - done
 
-docker 
+docker - done
 
 ci and cd
 
