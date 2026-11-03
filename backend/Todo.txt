@@ -6,10 +6,6 @@ docker
 
 ci and cd
 
-telemetry
-
-rabbit mq adding
-
 ruff and mypy.
 
 
